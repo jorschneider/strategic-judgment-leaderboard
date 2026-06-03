@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Strategic Judgment Leaderboard</title>
+<meta name="description" content="A benchmark concept that grades AI models on documented historical decisions under their original information cutoff. Demo — illustrative scores." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --manila: #e8dcc0;
+    --manila-deep: #ddcfa8;
+    --paper: #f4ecd8;
+    --paper-edge: #cabf9e;
+    --ink: #1f1a12;
+    --ink-soft: #4a4031;
+    --ink-faint: #6b5f49;
+    --redact: #18130b;
+    --accent: #8a2010;       /* oxblood / classified-red, single accent */
+    --accent-deep: #6a1809;
+    --rule: #b8a87e;
+    --stamp: #1c4a3a;        /* a muted green stamp for DECLASSIFIED, sober */
+    --shadow: rgba(40, 30, 12, 0.28);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background-color: #c9bb96;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(255,255,255,0.10), transparent 38%),
+      radial-gradient(circle at 82% 78%, rgba(60,45,15,0.10), transparent 42%);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+  .type { font-family: 'Special Elite', 'Courier New', monospace; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 22px 90px;
+  }
+
+  /* ---------- Folder masthead ---------- */
+  header.masthead {
+    position: relative;
+    margin: 34px auto 0;
+    max-width: 980px;
+    padding: 34px 40px 30px;
+    background: var(--manila);
+    border: 1px solid var(--paper-edge);
+    border-top: 14px solid var(--manila-deep);
+    box-shadow: 0 14px 40px var(--shadow);
+  }
+  header.masthead::before {
+    /* folder tab */
+    content: "DOSSIER \2014 SJL\2013001";
+    position: absolute;
+    top: -34px;
+    left: 30px;
+    background: var(--manila-deep);
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    padding: 5px 18px 6px;
+    border: 1px solid var(--paper-edge);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+  }
+
+  .classline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.34em;
+    color: var(--accent);
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+  .classline span { white-space: nowrap; }
+
+  h1.title {
+    font-family: 'Special Elite', monospace;
+    font-weight: 400;
+    font-size: clamp(30px, 5.6vw, 52px);
+    line-height: 1.06;
+    margin: 22px 0 6px;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .subtitle {
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: clamp(16px, 2.4vw, 21px);
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin: 0 0 22px;
+  }
+
+  .stamp {
+    position: absolute;
+    top: 22px;
+    right: 26px;
+    transform: rotate(-9deg);
+    border: 3px double var(--stamp);
+    color: var(--stamp);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    font-size: 15px;
+    padding: 7px 12px 5px;
+    text-align: center;
+    line-height: 1.15;
+    opacity: 0.82;
+    border-radius: 3px;
+    pointer-events: none;
+  }
+  .stamp small { display: block; font-size: 8.5px; letter-spacing: 0.22em; font-weight: 400; }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 2px 26px;
+    margin-top: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    padding-top: 14px;
+  }
+  .meta-grid b { color: var(--ink-soft); display: block; font-weight: 600; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2px; }
+
+  /* ---------- nav ---------- */
+  nav.toc {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--ink);
+    border: 1px solid var(--paper-edge);
+    border-top: none;
+  }
+  nav.toc a {
+    flex: 1 1 auto;
+    text-align: center;
+    color: var(--manila);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 11px 10px;
+    border-right: 1px solid #3a3225;
+  }
+  nav.toc a:last-child { border-right: none; }
+  nav.toc a:hover { background: var(--accent); color: #fff; text-decoration: none; }
+
+  /* ---------- paper sections ---------- */
+  section.sheet {
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    box-shadow: 0 8px 26px var(--shadow);
+    margin: 38px 0 0;
+    padding: 40px 46px 44px;
+    position: relative;
+  }
+  section.sheet::after {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid rgba(120,100,60,0.18);
+    pointer-events: none;
+  }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .sec-head h2 {
+    font-family: 'Special Elite', monospace;
+    font-weight: 400;
+    font-size: clamp(22px, 3.4vw, 30px);
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+  .sec-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  p { margin: 0 0 16px; }
+  .lede { font-size: 19px; }
+  .lede:first-letter {
+    font-family: 'Special Elite', monospace;
+    font-size: 3.1em;
+    float: left;
+    line-height: 0.74;
+    padding: 7px 9px 0 0;
+    color: var(--accent);
+  }
+
+  .pull {
+    border-left: 4px solid var(--accent);
+    padding: 4px 0 4px 18px;
+    margin: 22px 0;
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 18px;
+  }
+
+  /* redaction motif */
+  .rb {
+    background: var(--redact);
+    color: var(--redact);
+    padding: 0 6px;
+    border-radius: 1px;
+    user-select: none;
+    box-decoration-break: clone;
+  }
+  .rb::selection { background: var(--redact); }
+
+  /* ---------- callout / disclaimer ---------- */
+  .notice {
+    border: 2px dashed var(--accent);
+    background: rgba(138,32,16,0.05);
+    padding: 16px 20px;
+    margin: 0 0 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent-deep);
+    line-height: 1.55;
+  }
+  .notice b { letter-spacing: 0.14em; }
+
+  /* ---------- leaderboard table ---------- */
+  .lb-frame { overflow-x: auto; border: 1px solid var(--rule); }
+  table.lb {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    background: #faf4e2;
+    min-width: 640px;
+  }
+  table.lb thead th {
+    background: var(--ink);
+    color: var(--manila);
+    font-weight: 600;
+    text-align: right;
+    padding: 11px 14px;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  table.lb thead th:nth-child(1),
+  table.lb thead th:nth-child(2) { text-align: left; }
+  table.lb tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e0d4b3;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  table.lb tbody td:nth-child(1) { text-align: left; color: var(--ink-faint); width: 38px; }
+  table.lb tbody td:nth-child(2) { text-align: left; font-weight: 600; }
+  table.lb tbody tr:nth-child(odd) { background: #f3ead2; }
+  table.lb tbody tr.rank-1 td:nth-child(2) { color: var(--accent); }
+  .score-cell { position: relative; }
+  .bar {
+    display: inline-block;
+    height: 7px;
+    background: var(--accent);
+    opacity: 0.32;
+    border-radius: 1px;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .col-note { font-size: 11px; color: var(--ink-faint); margin-top: 10px; font-family: 'IBM Plex Mono', monospace; }
+  .placeholder-flag {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    padding: 3px 9px;
+    transform: rotate(-1.5deg);
+    margin-left: 8px;
+  }
+
+  /* ---------- case files ---------- */
+  .case {
+    border: 1px solid var(--rule);
+    background: #faf4e2;
+    margin: 0 0 22px;
+  }
+  .case > .case-bar {
+    width: 100%;
+    text-align: left;
+    background: var(--manila-deep);
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 16px 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
+  }
+  .case > .case-bar:hover { background: #d4c59a; }
+  .case-id {
+    background: var(--ink);
+    color: var(--manila);
+    padding: 4px 10px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    flex: 0 0 auto;
+  }
+  .case-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 18px;
+    flex: 1 1 auto;
+    line-height: 1.2;
+  }
+  .case-cut {
+    font-size: 11px;
+    color: var(--accent-deep);
+    flex: 0 0 auto;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+  .chevron { flex: 0 0 auto; font-size: 13px; color: var(--ink-faint); transition: transform 0.18s; }
+  .case.open .chevron { transform: rotate(90deg); }
+
+  .case-body { display: none; padding: 8px 26px 28px; }
+  .case.open .case-body { display: block; }
+
+  .field {
+    margin: 22px 0 0;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+  .field:first-child { border-top: none; }
+  .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .field-label::before {
+    content: "";
+    width: 14px; height: 2px; background: var(--accent); display: inline-block;
+  }
+
+  .promptbox {
+    background: #161009;
+    color: #d8cfb6;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    border-radius: 2px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+  }
+  .promptbox .pk { color: #e0a07a; }
+
+  ul.brief { margin: 0 0 10px; padding-left: 0; list-style: none; }
+  ul.brief li {
+    position: relative;
+    padding-left: 22px;
+    margin-bottom: 9px;
+  }
+  ul.brief li::before {
+    content: "\25AA";
+    position: absolute; left: 4px; top: 0;
+    color: var(--accent);
+    font-size: 12px;
+  }
+
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 680px) { .twocol { grid-template-columns: 1fr; } }
+
+  .rubric { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 4px; }
+  .rubric th, .rubric td { border: 1px solid var(--rule); padding: 8px 11px; text-align: left; vertical-align: top; }
+  .rubric th { background: var(--manila-deep); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .rubric td.pts { font-family: 'IBM Plex Mono', monospace; text-align: center; white-space: nowrap; width: 64px; font-weight: 600; }
+
+  .outcome {
+    background: rgba(28,74,58,0.07);
+    border-left: 4px solid var(--stamp);
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+
+  .src { font-size: 12px; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace; margin-top: 14px; line-height: 1.6; }
+  .src a { color: var(--accent-deep); }
+
+  /* steps */
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 14px 0 0; }
+  ol.steps li {
+    counter-increment: s;
+    position: relative;
+    padding: 4px 0 14px 46px;
+    border-left: 2px solid var(--rule);
+    margin-left: 14px;
+  }
+  ol.steps li::before {
+    content: counter(s, decimal-leading-zero);
+    position: absolute; left: -16px; top: 0;
+    background: var(--accent); color: #fff;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps li:last-child { border-left-color: transparent; }
+
+  code.inl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86em;
+    background: var(--manila-deep);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+
+  /* About dialog */
+  .about-toggle {
+    position: fixed;
+    right: 18px; bottom: 18px;
+    z-index: 40;
+    background: var(--ink);
+    color: var(--manila);
+    border: 1px solid var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    padding: 10px 16px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+  .about-toggle:hover { background: var(--accent); color: #fff; }
+
+  .overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(20,15,6,0.66);
+    padding: 40px 18px;
+    overflow-y: auto;
+  }
+  .overlay.show { display: block; }
+  .about-card {
+    max-width: 660px; margin: 20px auto;
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    border-top: 12px solid var(--accent);
+    padding: 30px 34px 34px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .about-card h3 { font-family: 'Special Elite', monospace; font-weight: 400; font-size: 24px; margin: 0 0 4px; }
+  .about-card h4 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--accent-deep); margin: 22px 0 6px;
+    border-bottom: 1px solid var(--rule); padding-bottom: 4px;
+  }
+  .about-card p, .about-card li { font-size: 14.5px; }
+  .about-card ul { padding-left: 20px; margin: 0 0 8px; }
+  .about-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: 1px solid var(--ink-faint); color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .about-close:hover { background: var(--ink); color: var(--manila); }
+
+  footer.colophon {
+    max-width: 980px; margin: 46px auto 0;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+  }
+
+  .open-all {
+    background: none; border: 1px solid var(--ink-faint);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em;
+    color: var(--ink-soft); padding: 6px 12px; cursor: pointer; text-transform: uppercase;
+  }
+  .open-all:hover { background: var(--ink); color: var(--manila); }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="stamp type">DECLASSIFIED<small>BENCHMARK CONCEPT</small></div>
+  <div class="classline">
+    <span>UNCLASSIFIED // FOR EVALUATION</span>
+    <span>FILE: SJL&#8211;001</span>
+    <span>DEMO BUILD</span>
+  </div>
+  <h1 class="title">The Strategic<br />Judgment Leaderboard</h1>
+  <p class="subtitle">A benchmark that grades AI models on the hardest decisions in modern history &mdash; judged only on what was knowable at the moment of choice.</p>
+  <div class="meta-grid">
+    <div><b>Subject</b>Evaluating strategic reasoning under uncertainty</div>
+    <div><b>Method</b>Information-cutoff / anti-contamination</div>
+    <div><b>Items in demo</b>3 declassified decisions</div>
+    <div><b>Status</b><span style="color:var(--accent)">Scores illustrative</span></div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#concept">Concept</a>
+  <a href="#leaderboard">Leaderboard</a>
+  <a href="#cases">Case Files</a>
+  <a href="#methodology">Methodology</a>
+  <a href="#run">Run It Yourself</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- ===================== CONCEPT ===================== -->
+  <section class="sheet" id="concept">
+    <div class="sec-head">
+      <h2>The Concept</h2>
+      <span class="tag">// Brief</span>
+    </div>
+    <p class="lede">Most AI benchmarks reward recall. The Strategic Judgment Leaderboard rewards <em>judgment</em> &mdash; the quality of reasoning a model produces when it stands where a decision-maker stood, knowing only what they knew, before history rendered its verdict.</p>
+
+    <p>We take a handful of consequential, thoroughly declassified decisions &mdash; the Cuban Missile Crisis, the Inchon landing, the decision to end the Gulf War &mdash; and reconstruct the situation room as it existed at the hour of choice. The model is briefed with the intelligence available <em>then</em>, prompted to deliberate and recommend a course of action, and graded against a historian-sourced reasoning standard and the documented outcome.</p>
+
+    <p class="pull">The hard part isn't knowing what happened. It's reasoning well when you don't.</p>
+
+    <p>The central design problem is <strong>contamination</strong>. A frontier model has read every account of October 1962. Ask it &ldquo;what should Kennedy do?&rdquo; and it will simply recite the blockade, the back-channel, the Jupiter trade &mdash; not because it reasoned, but because it remembers. So the benchmark is built around an <strong>information cutoff</strong>: each item fixes a date and hour, and the rubric rewards reasoning that could only have been derived from what was knowable at that moment &mdash; while penalizing tells that the model is reading the answer key off the back of the book. The full design is in the <a href="#methodology">Methodology</a>.</p>
+
+    <div class="notice">
+      <b>READ FIRST.</b> &nbsp;This is a working demo of the <em>concept</em>. The three historical case files are real and sourced to declassified records. The leaderboard scores below are <strong>ILLUSTRATIVE PLACEHOLDERS</strong> &mdash; no live evaluation has been run, no model has been scored. The &ldquo;gold&rdquo; reasoning standards are first drafts awaiting expert historical review. See the <a href="#" onclick="openAbout();return false;">About this demo</a> panel for exactly what's real and what it would take to make this live.
+    </div>
+  </section>
+
+  <!-- ===================== LEADERBOARD ===================== -->
+  <section class="sheet" id="leaderboard">
+    <div class="sec-head">
+      <h2>Leaderboard</h2>
+      <span class="tag">// Standings</span>
+    </div>
+
+    <p style="margin-bottom:6px">Aggregate strategic-judgment score across the three demo case files, 0&ndash;100, mean of per-item rubric scores.
+      <span class="placeholder-flag">ILLUSTRATIVE &mdash; NOT MEASURED</span>
+    </p>
+    <p class="col-note" style="margin-top:0;margin-bottom:18px">These figures are hand-set demo values to show the table's shape. They are <strong>not</strong> the output of any evaluation. Do not cite them.</p>
+
+    <div class="lb-frame">
+      <table class="lb">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Model</th>
+            <th>Overall</th>
+            <th>Cuba&nbsp;&#39;62</th>
+            <th>Inchon&nbsp;&#39;50</th>
+            <th>Gulf&nbsp;&#39;91</th>
+            <th>Contam.&nbsp;flags</th>
+          </tr>
+        </thead>
+        <tbody id="lbBody"><!-- filled by JS --></tbody>
+      </table>
+    </div>
+    <p class="col-note">
+      <strong>Overall</strong> = mean of three item scores. &nbsp;<strong>Contam. flags</strong> = count of responses in which the grader detected hindsight leakage (lower is better). &nbsp;Bars are proportional to the overall score and carry no independent meaning.
+    </p>
+  </section>
+
+  <!-- ===================== CASE FILES ===================== -->
+  <section class="sheet" id="cases">
+    <div class="sec-head">
+      <h2>Case Files</h2>
+      <button class="open-all" id="openAll" type="button">Expand all</button>
+    </div>
+    <p>Each file reconstructs the decision as it stood at its information cutoff: the scenario known to the principals, the exact prompt a model receives, a historian-sourced gold standard, the documented outcome, and the scoring rubric. Click a file to open it.</p>
+
+    <!-- CASE 1: CUBA -->
+    <div class="case" id="case-cuba">
+      <button class="case-bar" type="button" onclick="toggleCase('case-cuba')">
+        <span class="case-id mono">SJL&#8209;001&#8209;A</span>
+        <span class="case-title">The ExComm Decision &mdash; Cuban Missile Crisis</span>
+        <span class="case-cut mono">CUTOFF&nbsp;&middot;&nbsp;16&nbsp;OCT&nbsp;1962&nbsp;A.M.</span>
+        <span class="chevron mono">&#9656;</span>
+      </button>
+      <div class="case-body">
+
+        <div class="field">
+          <div class="field-label">Information Cutoff</div>
+          <p style="margin-bottom:0"><strong class="mono">16 October 1962, morning.</strong> The model knows everything the President knew at the first meeting of the Executive Committee of the National Security Council &mdash; and nothing after. It does <em>not</em> know there will be a blockade, a thirteen-day standoff, a secret Jupiter-missile trade, or a peaceful resolution. Those are the answer key, and they are withheld.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Situation as Known</div>
+          <ul class="brief">
+            <li>On 14 October a U-2 reconnaissance flight photographed San Cristóbal, Cuba. Analysts at NPIC have identified <strong>Soviet medium-range ballistic missile (SS-4) sites under construction</strong>. The film was developed and read out on 15 October; the President was briefed this morning, 16 October.</li>
+            <li>The missiles are not yet operational, but the sites are being built rapidly. Once fueled and armed, SS-4s could strike Washington, D.C. with little warning.</li>
+            <li>This contradicts repeated public and private Soviet assurances &mdash; through Ambassador Dobrynin and others &mdash; that Moscow would place no offensive weapons in Cuba.</li>
+            <li>It is three weeks before the U.S. midterm elections. The administration has publicly warned that offensive missiles in Cuba would not be tolerated.</li>
+            <li>Options on the table this morning: do nothing; a diplomatic approach; a naval blockade; a single &ldquo;surgical&rdquo; air strike on the missile sites; a wider air campaign; a full invasion of Cuba. The military's surgical-strike option cannot guarantee destroying every missile, and any strike risks killing Soviet personnel.</li>
+            <li><strong>Unknown to the principals this morning:</strong> the precise number of warheads on the island, whether tactical nuclear weapons are already deployed to repel an invasion, and how Khrushchev will respond to any given U.S. move. <span class="rb">REDACTED &mdash; not knowable on 16 Oct</span></li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Prompt (verbatim, as issued to the model)</div>
+<div class="promptbox"><span class="pk">SYSTEM:</span> You are a strategic advisor in the situation room. You may use ONLY the
+information in the briefing below, which reflects everything known to U.S.
+decision-makers as of the stated date and hour. Do not use any knowledge of
+what happened afterward. If you find yourself relying on the outcome, stop and
+reason instead from the facts on hand.
+
+<span class="pk">DATE/HOUR:</span> 16 October 1962, morning.
+
+<span class="pk">BRIEFING:</span> [the "Situation as Known" facts above are inserted here in full]
+
+<span class="pk">TASK:</span>
+ 1. State the core U.S. objective in one sentence.
+ 2. List the realistic options and, for each, its principal risks — including
+    how the Soviet leadership is likely to respond.
+ 3. Recommend a course of action and justify it.
+ 4. Identify the single piece of information you would most want before acting,
+    and how you would try to get it without forcing the other side's hand.
+ 5. Name the worst plausible way your recommendation could escalate, and how
+    you would build in an off-ramp.
+
+Respond as a deliberative memorandum.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Gold Standard &mdash; Historian-Sourced Reasoning <span class="placeholder-flag" style="transform:rotate(-1deg)">DRAFT &mdash; NEEDS EXPERT REVIEW</span></div>
+          <p style="margin-bottom:10px">A strong response is graded on reasoning quality, not on naming the blockade. The reference standard rewards a memo that:</p>
+          <ul class="brief">
+            <li>Frames the objective correctly: <em>get the missiles out</em> without triggering nuclear war &mdash; not necessarily to punish or invade. Recognizes this is as much a political and signaling problem as a military one.</li>
+            <li>Sees that a &ldquo;surgical&rdquo; strike is an illusion of control: it cannot be guaranteed to get every missile, it kills Soviets, it forecloses options, and it hands the initiative to Khrushchev. A first strike is the <em>last</em> rung, not the first.</li>
+            <li>Identifies the value of a graduated, reversible move that buys time, demonstrates resolve, keeps the next move in U.S. hands, and gives the adversary a face-saving exit &mdash; the logic that historically pointed ExComm toward a blockade/quarantine paired with private diplomacy.</li>
+            <li>Treats Khrushchev as a rational actor with his own domestic constraints, and explicitly designs an <strong>off-ramp</strong> (a quiet reciprocal concession; avoiding public humiliation).</li>
+            <li>Names the information it most needs (are the missiles operational? are warheads on the island?) and how to buy time to learn it.</li>
+          </ul>
+          <p class="src">Reasoning standard to be drafted and verified against: declassified ExComm meeting transcripts (the secret recordings); FRUS 1961&ndash;1963, Vol. XI (Cuban Missile Crisis); JFK Library holdings. <em>This draft is a starting point for Jordan's expert review, not a finished key.</em></p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Documented Outcome</div>
+          <div class="outcome">
+            After six days of secret deliberation, Kennedy chose a naval &ldquo;quarantine&rdquo; of Cuba, announced publicly on 22 October, rather than an immediate strike. Thirteen tense days followed. The crisis was resolved when the USSR agreed to remove the missiles in exchange for a U.S. pledge not to invade Cuba and a quiet, separate commitment to withdraw Jupiter missiles from Turkey. War was averted. The graduated, reversible move with a built-in off-ramp is widely regarded as a model of crisis judgment.
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Scoring Rubric (100 pts)</div>
+          <table class="rubric">
+            <tr><th>Dimension</th><th>What earns points</th><th class="pts">Pts</th></tr>
+            <tr><td>Objective framing</td><td>Correctly centers &ldquo;remove the missiles without nuclear war&rdquo; over punishment/invasion.</td><td class="pts">20</td></tr>
+            <tr><td>Option analysis</td><td>Weighs strike vs. blockade vs. diplomacy on their real risks; exposes the &ldquo;surgical strike&rdquo; fallacy.</td><td class="pts">25</td></tr>
+            <tr><td>Escalation control</td><td>Prefers a reversible, time-buying move; designs a credible off-ramp for the adversary.</td><td class="pts">25</td></tr>
+            <tr><td>Adversary modeling</td><td>Treats Khrushchev as rational with domestic constraints; anticipates his likely response.</td><td class="pts">15</td></tr>
+            <tr><td>Epistemic discipline</td><td>Reasons from 16 Oct facts only; names key unknowns. <em>Penalty for hindsight tells.</em></td><td class="pts">15</td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CASE 2: INCHON -->
+    <div class="case" id="case-inchon">
+      <button class="case-bar" type="button" onclick="toggleCase('case-inchon')">
+        <span class="case-id mono">SJL&#8209;001&#8209;B</span>
+        <span class="case-title">Operation Chromite &mdash; The Inchon Landing</span>
+        <span class="case-cut mono">CUTOFF&nbsp;&middot;&nbsp;23&nbsp;AUG&nbsp;1950</span>
+        <span class="chevron mono">&#9656;</span>
+      </button>
+      <div class="case-body">
+
+        <div class="field">
+          <div class="field-label">Information Cutoff</div>
+          <p style="margin-bottom:0"><strong class="mono">23 August 1950.</strong> The model stands in the Dai-Ichi headquarters in Tokyo on the day the Joint Chiefs' delegation &mdash; Army Chief Collins and CNO Sherman &mdash; arrives to talk MacArthur out of Inchon. It does not know the landing will be approved, will succeed, or that Seoul will fall within two weeks. <span class="rb">Outcome withheld</span></p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Situation as Known</div>
+          <ul class="brief">
+            <li>It is late August 1950. North Korean forces have driven U.N. troops into a small pocket in the southeast &mdash; the Pusan Perimeter &mdash; where the line is barely holding. The strategic situation is precarious.</li>
+            <li>General MacArthur proposes a bold amphibious envelopment far to the rear: a landing at <strong>Inchon</strong>, the port for Seoul, to sever North Korean supply lines and retake the capital, collapsing the enemy's position around Pusan.</li>
+            <li>The Navy and Marine planners catalog severe obstacles. Inchon has <strong>tides exceeding 30 feet</strong> &mdash; among the most extreme in the world &mdash; leaving vast mud flats that are impassable except in brief windows. The approach is a single narrow, easily mined channel (Flying Fish Channel). There are no beaches; troops must scale <strong>seawalls</strong> directly into a built-up city. The fortified island of <strong>Wolmi-do</strong> dominates the harbor and must be taken first, sacrificing surprise.</li>
+            <li>The suitable tide window is extraordinarily narrow &mdash; only a few days in mid-September offer high enough water, and the landing would have to be split into two phases roughly twelve hours apart.</li>
+            <li>The Joint Chiefs are skeptical: they fear stripping reserves from the fragile Pusan Perimeter, doubt the plan can be ready in time, and question whether Inchon is the right place at all. Alternative landing sites further south (e.g., Kunsan) are considered safer but far less decisive.</li>
+            <li><strong>Unknown to the planners:</strong> the actual strength and readiness of enemy defenses at Inchon and Wolmi-do, and whether the enemy anticipates the move. <span class="rb">REDACTED &mdash; not knowable on 23 Aug</span></li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Prompt (verbatim, as issued to the model)</div>
+<div class="promptbox"><span class="pk">SYSTEM:</span> You are a strategic advisor to the Joint Chiefs of Staff. You may use ONLY the
+information in the briefing below, reflecting what was known on the stated date.
+Do not use any knowledge of what happened afterward.
+
+<span class="pk">DATE:</span> 23 August 1950.
+
+<span class="pk">BRIEFING:</span> [the "Situation as Known" facts above are inserted here in full]
+
+<span class="pk">TASK:</span>
+ 1. State the operational problem and the decisive objective in one sentence.
+ 2. Assess MacArthur's Inchon proposal against its specific physical and
+    military risks (tides, channel, seawalls, Wolmi-do, loss of surprise,
+    drawdown of the Pusan reserve).
+ 3. Compare it with the safer alternatives and state what each would and would
+    not achieve.
+ 4. Recommend: approve Inchon, approve an alternative, or withhold — and justify.
+ 5. If you approve a high-risk plan, specify the conditions and abort criteria
+    that would make the gamble defensible rather than reckless.
+
+Respond as a deliberative memorandum.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Gold Standard &mdash; Historian-Sourced Reasoning <span class="placeholder-flag" style="transform:rotate(-1deg)">DRAFT &mdash; NEEDS EXPERT REVIEW</span></div>
+          <p style="margin-bottom:10px">This is the benchmark's hardest case for grading, because the bold choice was both extraordinarily risky <em>and</em> ultimately correct. A strong response is <strong>not</strong> scored on whether it says &ldquo;land at Inchon.&rdquo; It is scored on whether it reasons about risk and reward honestly:</p>
+          <ul class="brief">
+            <li>Correctly identifies the decisive logic of envelopment: a successful deep landing collapses the entire enemy position and is worth far more than an incremental push from Pusan.</li>
+            <li>Engages each physical objection on its merits rather than dismissing them &mdash; and recognizes that the very obstacles (tides, the &ldquo;impossible&rdquo; harbor) also make the landing <em>unexpected</em>, which is itself a source of surprise and leverage.</li>
+            <li>Distinguishes a calculated gamble from recklessness: a high expected payoff, a narrow but real window, and conditions under which the gamble is defensible &mdash; vs. a low-probability bet with no upside.</li>
+            <li>Either recommends Inchon <em>with explicit risk-mitigation and abort criteria</em>, or recommends an alternative with a clear-eyed accounting of the decisiveness it sacrifices. Both can score well; an unreasoned answer in either direction cannot.</li>
+            <li>Models the adversary's expectations &mdash; precisely the dimension MacArthur exploited.</li>
+          </ul>
+          <p class="src">Reasoning standard to be drafted and verified against: the official histories (e.g., the U.S. Army <em>South to the Naktong, North to the Yalu</em>), USMC and Naval History &amp; Heritage Command accounts of Operation Chromite, and the record of the 23 Aug 1950 Tokyo conference. <em>Draft for expert review.</em></p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Documented Outcome</div>
+          <div class="outcome">
+            The Joint Chiefs approved the plan on 28 August; President Truman concurred. On 15 September 1950 the landing went in &mdash; Wolmi-do was taken on the morning tide, the main force on the evening tide. It succeeded spectacularly, severing North Korean supply lines and leading to the recapture of Seoul within roughly two weeks and the collapse of the enemy front. Inchon is remembered as a masterstroke. (Its very success arguably emboldened the subsequent advance to the Yalu &mdash; which provoked Chinese intervention &mdash; a reminder that a brilliant operational gamble can carry strategic consequences beyond the decision at hand.)
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Scoring Rubric (100 pts)</div>
+          <table class="rubric">
+            <tr><th>Dimension</th><th>What earns points</th><th class="pts">Pts</th></tr>
+            <tr><td>Decisive-objective framing</td><td>Sees envelopment's outsized payoff vs. incremental pressure from Pusan.</td><td class="pts">20</td></tr>
+            <tr><td>Honest risk accounting</td><td>Engages tides, channel, seawalls, Wolmi-do, surprise loss, reserve drawdown on the merits.</td><td class="pts">25</td></tr>
+            <tr><td>Gamble discipline</td><td>Separates calculated risk from recklessness; sets conditions/abort criteria.</td><td class="pts">25</td></tr>
+            <tr><td>Alternatives</td><td>Fairly weighs safer landing sites and what decisiveness they forfeit.</td><td class="pts">15</td></tr>
+            <tr><td>Epistemic discipline</td><td>Reasons from 23 Aug facts only; uses the &ldquo;unexpected&rdquo; angle as analysis, not hindsight. <em>Penalty for outcome tells.</em></td><td class="pts">15</td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CASE 3: GULF -->
+    <div class="case" id="case-gulf">
+      <button class="case-bar" type="button" onclick="toggleCase('case-gulf')">
+        <span class="case-id mono">SJL&#8209;001&#8209;C</span>
+        <span class="case-title">Stop at 100 Hours &mdash; Ending the Gulf War</span>
+        <span class="case-cut mono">CUTOFF&nbsp;&middot;&nbsp;27&nbsp;FEB&nbsp;1991&nbsp;EVE</span>
+        <span class="chevron mono">&#9656;</span>
+      </button>
+      <div class="case-body">
+
+        <div class="field">
+          <div class="field-label">Information Cutoff</div>
+          <p style="margin-bottom:0"><strong class="mono">27 February 1991, evening (Washington).</strong> The ground war is roughly 100 hours old. The model is briefed as the President and his advisors weigh whether to halt offensive operations now. It does not know that a ceasefire will be declared, that part of the Republican Guard will escape, or that Saddam Hussein will remain in power for another twelve years. <span class="rb">Aftermath withheld</span></p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Situation as Known</div>
+          <ul class="brief">
+            <li>The U.S.-led coalition's ground offensive began 24 February. In roughly four days it has been a rout: Kuwait is effectively liberated, the Iraqi army is shattered and in headlong retreat, and coalition casualties are remarkably light.</li>
+            <li>Retreating Iraqi columns on the highways out of Kuwait City are being destroyed from the air &mdash; scenes already drawing the label &ldquo;Highway of Death.&rdquo; The imagery is becoming a political and humanitarian concern.</li>
+            <li>The coalition's <strong>stated U.N. mandate</strong> is the liberation of Kuwait and restoration of its government &mdash; <em>not</em> the conquest of Iraq or the removal of Saddam Hussein. The coalition includes Arab states whose participation is premised on that limited aim.</li>
+            <li>Continuing the offensive could trap and destroy more of the elite Republican Guard, but would mean driving deeper into Iraq &mdash; beyond the mandate, with uncertain end-state, occupation risk, and strain on coalition unity.</li>
+            <li>Halting now secures a clean, decisive victory at low cost and on the moral high ground, but risks leaving Saddam's regime &mdash; and a portion of his best units &mdash; intact.</li>
+            <li><strong>Unknown this evening:</strong> exactly how much of the Republican Guard will get away; whether Saddam will survive politically; whether Iraq's internal factions will rise against him and what will happen to them. <span class="rb">REDACTED &mdash; not knowable on 27 Feb</span></li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <div class="field-label">The Prompt (verbatim, as issued to the model)</div>
+<div class="promptbox"><span class="pk">SYSTEM:</span> You are a strategic advisor in the situation room. You may use ONLY the
+information in the briefing below, reflecting what was known on the stated date
+and hour. Do not use any knowledge of what happened afterward.
+
+<span class="pk">DATE/HOUR:</span> 27 February 1991, evening (Washington).
+
+<span class="pk">BRIEFING:</span> [the "Situation as Known" facts above are inserted here in full]
+
+<span class="pk">TASK:</span>
+ 1. Restate the war's actual political objective and whether it has been met.
+ 2. Lay out the case FOR halting now and the case for pressing on; be specific
+    about what each buys and what each costs.
+ 3. Address the tension between military opportunity (finishing the Republican
+    Guard / removing Saddam) and the limited mandate and coalition unity.
+ 4. Recommend halt, continue, or continue-with-limits — and justify against the
+    objective, not against an open-ended wish list.
+ 5. If you halt, specify the ceasefire terms you would demand to lock in the win.
+
+Respond as a deliberative memorandum.</div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Gold Standard &mdash; Historian-Sourced Reasoning <span class="placeholder-flag" style="transform:rotate(-1deg)">DRAFT &mdash; NEEDS EXPERT REVIEW</span></div>
+          <p style="margin-bottom:10px">This case is deliberately contested: the decision to stop has been both praised and second-guessed. The benchmark does <strong>not</strong> reward a particular verdict; it rewards disciplined reasoning <em>against the stated objective</em>:</p>
+          <ul class="brief">
+            <li>Anchors on the real, limited objective &mdash; liberate Kuwait, restore its government &mdash; and recognizes that objective has essentially been achieved.</li>
+            <li>Distinguishes &ldquo;what is militarily possible&rdquo; from &ldquo;what the mandate and coalition authorize,&rdquo; and treats mission creep as a real cost, not a free option.</li>
+            <li>Weighs the genuine value of destroying more of the Republican Guard and the temptation of regime change against the costs: coalition fracture, occupation with no defined end-state, legitimacy, and the &ldquo;Highway of Death&rdquo; optics.</li>
+            <li>Whether it recommends halt or a limited continuation, it ties the recommendation to the objective and specifies ceasefire terms that lock in the win &mdash; rather than reasoning backward from a desire to topple Saddam.</li>
+            <li>Surfaces the strongest counter-argument to its own recommendation honestly &mdash; the mark of judgment under genuine uncertainty.</li>
+          </ul>
+          <p class="src">Reasoning standard to be drafted and verified against: President Bush's 27 Feb 1991 address; the recollections of Bush, Scowcroft, and Powell; and the established record of the war's U.N. mandate and coalition composition. <em>Draft for expert review; this is the most debatable of the three keys.</em></p>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Documented Outcome</div>
+          <div class="outcome">
+            President Bush, after consulting General Powell and coalition partners, suspended offensive operations after 100 hours; a ceasefire followed. Kuwait was liberated at low coalition cost and the limited mandate was honored &mdash; but a portion of the Republican Guard escaped, Saddam Hussein crushed the subsequent Shia and Kurdish uprisings, and he remained in power until 2003. The decision is still debated: a textbook limited war by its own terms, or a victory left dangerously unfinished.
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">Scoring Rubric (100 pts)</div>
+          <table class="rubric">
+            <tr><th>Dimension</th><th>What earns points</th><th class="pts">Pts</th></tr>
+            <tr><td>Objective anchoring</td><td>Centers the actual limited mandate and judges &ldquo;done or not&rdquo; against it.</td><td class="pts">20</td></tr>
+            <tr><td>Cost/benefit honesty</td><td>States plainly what halting vs. continuing each buys and costs.</td><td class="pts">25</td></tr>
+            <tr><td>Mission-creep discipline</td><td>Treats coalition unity and end-state risk as real constraints, not afterthoughts.</td><td class="pts">25</td></tr>
+            <tr><td>Terms &amp; lock-in</td><td>If halting, specifies ceasefire terms; if continuing, defines a limit and end-state.</td><td class="pts">15</td></tr>
+            <tr><td>Epistemic discipline</td><td>Reasons from 27 Feb facts; steel-mans the opposing view; no hindsight about Saddam's survival. <em>Penalty for outcome tells.</em></td><td class="pts">15</td></tr>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== METHODOLOGY ===================== -->
+  <section class="sheet" id="methodology">
+    <div class="sec-head">
+      <h2>Methodology</h2>
+      <span class="tag">// Design</span>
+    </div>
+
+    <h3 class="type" style="font-weight:400;font-size:22px;margin:0 0 6px">The anti-contamination problem</h3>
+    <p>A frontier model has effectively memorized the history of every case in this benchmark. If you ask it &ldquo;what should the President do about the missiles in Cuba?&rdquo; the model can answer perfectly &mdash; by recall, not reasoning. That tells you nothing about its judgment. The entire design exists to separate <em>reasoning from a situation</em> from <em>reciting an outcome.</em></p>
+
+    <h3 class="type" style="font-weight:400;font-size:22px;margin:24px 0 6px">The information-cutoff design</h3>
+    <div class="twocol">
+      <div>
+        <p>Each item fixes a <strong>date and hour</strong> and reconstructs the decision environment as of that moment. The briefing contains only what was knowable then; everything downstream &mdash; the choice made, the consequences, later revelations &mdash; is withheld and serves as the hidden answer key.</p>
+        <p>The prompt explicitly instructs the model to reason only from the briefing and not to rely on what happened next. The rubric then does two things at once: it rewards the <em>quality of the reasoning a contemporary could have produced</em>, and it <em>penalizes hindsight tells</em>.</p>
+      </div>
+      <div>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);margin-bottom:6px">HINDSIGHT TELLS THE GRADER FLAGS:</p>
+        <ul class="brief" style="font-size:14px">
+          <li>Naming the historical choice without deriving it (&ldquo;impose a quarantine&rdquo; with no reasoning).</li>
+          <li>Referencing facts not in the briefing (the Jupiter trade, the 13 days, Chinese intervention).</li>
+          <li>Stating the outcome as a premise (&ldquo;since Inchon succeeded&hellip;&rdquo;).</li>
+          <li>Suspiciously specific confidence about the adversary's hidden intent.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="type" style="font-weight:400;font-size:22px;margin:24px 0 6px">Grading</h3>
+    <p>Each response is scored against a per-item rubric (100 points) covering objective framing, option/risk analysis, escalation or risk discipline, adversary modeling, and epistemic discipline. The <strong>gold standard rewards reasoning, not the &ldquo;right&rdquo; answer</strong> &mdash; in the contested cases (Gulf War especially) a well-argued minority recommendation can outscore a poorly-argued majority one. Grading is intended to be done by a rubric-guided judge model with human spot-checks, and every gold key must pass <strong>expert historical review</strong> before any score is published.</p>
+
+    <div class="notice" style="border-style:solid">
+      <b>WHY THE SCORES ARE BLANK-LABELLED.</b> A benchmark is only as honest as its refusal to publish numbers it didn't measure. The leaderboard above shows the <em>shape</em> of the result; the figures are placeholders. Publishing real numbers requires running the harness below and putting every gold key through expert review.
+    </div>
+  </section>
+
+  <!-- ===================== RUN IT ===================== -->
+  <section class="sheet" id="run">
+    <div class="sec-head">
+      <h2>Run This Eval Yourself</h2>
+      <span class="tag">// Harness</span>
+    </div>
+    <p>Nothing here is hidden behind a service. To turn this concept into real numbers, you would build a small harness and run it. The path:</p>
+
+    <ol class="steps">
+      <li><strong>Finalize the items.</strong> Lock each case file's briefing and prompt, and put every gold-standard reasoning key through <strong>expert historical review</strong> (this is the step that most needs Jordan). Keep briefings strictly to widely-established declassified facts.</li>
+      <li><strong>Get model access.</strong> Obtain API keys for the frontier models you want to rank (e.g. the Anthropic, OpenAI, and Google APIs). No keys are bundled here.</li>
+      <li><strong>Call each model on each item.</strong> Send the verbatim system + briefing + task prompt; collect the deliberative memo. Run several trials per item to average over variance.</li>
+      <li><strong>Grade with a rubric-guided judge.</strong> Use a strong judge model, prompted with the rubric and the gold key, to score each dimension and flag hindsight tells &mdash; then <strong>human-spot-check</strong> a sample to calibrate the judge.</li>
+      <li><strong>Aggregate and publish.</strong> Mean the per-item scores into the overall, tabulate contamination flags, and replace the placeholder leaderboard &mdash; with the methodology and trial count stated alongside.</li>
+    </ol>
+
+    <p style="margin-top:22px">What's required to go live, in one line: <code class="inl">finalized + expert-reviewed items</code> &nbsp;+&nbsp; <code class="inl">model API keys</code> &nbsp;+&nbsp; <code class="inl">a runner &amp; rubric-judge harness</code> &nbsp;+&nbsp; <code class="inl">human calibration</code>.</p>
+  </section>
+
+  <footer class="colophon">
+    THE STRATEGIC JUDGMENT LEADERBOARD &middot; FILE SJL&#8211;001 &middot; DEMO BUILD &middot; SCORES ILLUSTRATIVE<br />
+    Historical case files sourced to declassified records &middot; gold keys pending expert review
+  </footer>
+
+</div>
+
+<button class="about-toggle mono" type="button" onclick="openAbout()">? &nbsp;ABOUT THIS DEMO</button>
+
+<div class="overlay" id="aboutOverlay" onclick="if(event.target===this)closeAbout()">
+  <div class="about-card">
+    <button class="about-close mono" type="button" onclick="closeAbout()">CLOSE &times;</button>
+    <h3>About this demo</h3>
+    <p style="color:var(--ink-soft);font-style:italic">An honest accounting of what is real here and what is not.</p>
+
+    <h4>What's real</h4>
+    <ul>
+      <li>The three historical case files &mdash; the situations, dates, options, and documented outcomes &mdash; are drawn from well-established, declassified records (ExComm transcripts &amp; FRUS for Cuba; the official Korean War and Operation Chromite histories for Inchon; the public record of the Gulf War's mandate and ceasefire). Kept to widely-accepted facts.</li>
+      <li>The benchmark <em>concept</em> &mdash; the information-cutoff / anti-contamination design, the prompts, and the scoring rubrics &mdash; is a genuine, runnable design.</li>
+    </ul>
+
+    <h4>What's illustrative / placeholder</h4>
+    <ul>
+      <li><strong>Every leaderboard score is a hand-set placeholder.</strong> No model was evaluated. No live eval was run. The numbers exist only to show the table's shape and are labelled accordingly. Do not cite them.</li>
+      <li>The &ldquo;contamination flags&rdquo; counts are likewise illustrative.</li>
+      <li>The <strong>gold-standard reasoning keys are first drafts</strong> written for this demo. They have <em>not</em> been through expert historical review and should be treated as starting points, not authority.</li>
+    </ul>
+
+    <h4>What it would take to go live</h4>
+    <ul>
+      <li>API keys for the frontier models to be ranked, and a small harness to call each model on each item and collect responses.</li>
+      <li>A rubric-guided judge model plus human spot-checking to grade responses and detect hindsight leakage.</li>
+      <li><strong>Expert historical review</strong> of every gold key and briefing &mdash; the step that most needs Jordan &mdash; before any score is published.</li>
+      <li>Primary-source verification of each briefing against FRUS, declassified transcripts, and official histories.</li>
+    </ul>
+    <p style="font-size:12.5px;color:var(--ink-faint);margin-top:18px;margin-bottom:0">Built as a single static <code class="inl">index.html</code>. No tracking, no backend, no data leaves your browser.</p>
+  </div>
+</div>
+
+<script>
+  // ---- Leaderboard data: ILLUSTRATIVE PLACEHOLDERS ONLY (not measured) ----
+  var LEADERBOARD = [
+    { model: "Model A (frontier)",      overall: 78, cuba: 82, inchon: 71, gulf: 81, flags: 1 },
+    { model: "Model B (frontier)",      overall: 74, cuba: 79, inchon: 68, gulf: 75, flags: 2 },
+    { model: "Model C (frontier)",      overall: 71, cuba: 76, inchon: 64, gulf: 73, flags: 2 },
+    { model: "Model D (mid-tier)",      overall: 63, cuba: 68, inchon: 55, gulf: 66, flags: 4 },
+    { model: "Model E (open-weight)",   overall: 57, cuba: 61, inchon: 49, gulf: 61, flags: 5 },
+    { model: "Model F (small)",         overall: 48, cuba: 52, inchon: 41, gulf: 51, flags: 7 }
+  ];
+
+  (function renderLeaderboard(){
+    var body = document.getElementById('lbBody');
+    var max = 0, i;
+    for (i = 0; i < LEADERBOARD.length; i++) { if (LEADERBOARD[i].overall > max) max = LEADERBOARD[i].overall; }
+    var rows = LEADERBOARD.slice().sort(function(a,b){ return b.overall - a.overall; });
+    var html = '';
+    for (i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var rank = i + 1;
+      var barW = Math.round((r.overall / max) * 90); // px, proportional
+      html += '<tr class="rank-' + rank + '">'
+        + '<td>' + (rank < 10 ? '0' + rank : rank) + '</td>'
+        + '<td>' + r.model + '</td>'
+        + '<td class="score-cell"><span class="bar" style="width:' + barW + 'px"></span>' + r.overall + '</td>'
+        + '<td>' + r.cuba + '</td>'
+        + '<td>' + r.inchon + '</td>'
+        + '<td>' + r.gulf + '</td>'
+        + '<td>' + r.flags + '</td>'
+        + '</tr>';
+    }
+    body.innerHTML = html;
+  })();
+
+  // ---- Case file accordion ----
+  function toggleCase(id){
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('open');
+    syncOpenAll();
+  }
+  function syncOpenAll(){
+    var cases = document.querySelectorAll('.case');
+    var allOpen = cases.length > 0;
+    cases.forEach(function(c){ if (!c.classList.contains('open')) allOpen = false; });
+    var btn = document.getElementById('openAll');
+    if (btn) btn.textContent = allOpen ? 'Collapse all' : 'Expand all';
+  }
+  document.getElementById('openAll').addEventListener('click', function(){
+    var cases = document.querySelectorAll('.case');
+    var allOpen = cases.length > 0;
+    cases.forEach(function(c){ if (!c.classList.contains('open')) allOpen = false; });
+    cases.forEach(function(c){ c.classList.toggle('open', !allOpen); });
+    syncOpenAll();
+  });
+
+  // ---- About overlay ----
+  function openAbout(){ document.getElementById('aboutOverlay').classList.add('show'); }
+  function closeAbout(){ document.getElementById('aboutOverlay').classList.remove('show'); }
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAbout(); });
+
+  // Open the flagship case by default so the page isn't empty-looking.
+  document.getElementById('case-cuba').classList.add('open');
+  syncOpenAll();
+</script>
+
+</body>
+</html>
