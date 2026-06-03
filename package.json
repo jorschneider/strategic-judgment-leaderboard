@@ -1,0 +1,17 @@
+{
+  "name": "strategic-judgment-leaderboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static dossier site + eval harness that grades AI models on documented historical decisions under their original information cutoff.",
+  "type": "module",
+  "scripts": {
+    "run:dry": "node harness/run.mjs --dry-run",
+    "judge:dry": "node harness/judge.mjs --dry-run",
+    "eval:dry": "node harness/run.mjs --dry-run && node harness/judge.mjs --dry-run",
+    "run": "node harness/run.mjs",
+    "judge": "node harness/judge.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0"
+  }
+}

@@ -569,7 +569,7 @@
 
     <p>The central design problem is <strong>contamination</strong>. A frontier model has read every account of October 1962. Ask it &ldquo;what should Kennedy do?&rdquo; and it will simply recite the blockade, the back-channel, the Jupiter trade &mdash; not because it reasoned, but because it remembers. So the benchmark is built around an <strong>information cutoff</strong>: each item fixes a date and hour, and the rubric rewards reasoning that could only have been derived from what was knowable at that moment &mdash; while penalizing tells that the model is reading the answer key off the back of the book. The full design is in the <a href="#methodology">Methodology</a>.</p>
 
-    <div class="notice">
+    <div class="notice" id="conceptNotice">
       <b>READ FIRST.</b> &nbsp;This is a working demo of the <em>concept</em>. The three historical case files are real and sourced to declassified records. The leaderboard scores below are <strong>ILLUSTRATIVE PLACEHOLDERS</strong> &mdash; no live evaluation has been run, no model has been scored. The &ldquo;gold&rdquo; reasoning standards are first drafts awaiting expert historical review. See the <a href="#" onclick="openAbout();return false;">About this demo</a> panel for exactly what's real and what it would take to make this live.
     </div>
   </section>
@@ -584,7 +584,7 @@
     <p style="margin-bottom:6px">Aggregate strategic-judgment score across the three demo case files, 0&ndash;100, mean of per-item rubric scores.
       <span class="placeholder-flag">ILLUSTRATIVE &mdash; NOT MEASURED</span>
     </p>
-    <p class="col-note" style="margin-top:0;margin-bottom:18px">These figures are hand-set demo values to show the table's shape. They are <strong>not</strong> the output of any evaluation. Do not cite them.</p>
+    <p class="col-note" id="lbDisclaimer" style="margin-top:0;margin-bottom:18px">These figures are hand-set demo values to show the table's shape. They are <strong>not</strong> the output of any evaluation. Do not cite them.</p>
 
     <div class="lb-frame">
       <table class="lb">
@@ -970,6 +970,11 @@ Respond as a deliberative memorandum.</div>
 
 <script>
   // ---- Leaderboard data: ILLUSTRATIVE PLACEHOLDERS ONLY (not measured) ----
+  // These render whenever no real scores.json is available — opening the file
+  // directly (file:// blocks fetch), the file being absent, or a generated
+  // scores.json that is still marked unrun/unmeasured. The harness in
+  // harness/run.mjs + harness/judge.mjs produces a real scores.json that, when
+  // measured AND expert-reviewed, replaces these.
   var LEADERBOARD = [
     { model: "Model A (frontier)",      overall: 78, cuba: 82, inchon: 71, gulf: 81, flags: 1 },
     { model: "Model B (frontier)",      overall: 74, cuba: 79, inchon: 68, gulf: 75, flags: 2 },
@@ -979,11 +984,12 @@ Respond as a deliberative memorandum.</div>
     { model: "Model F (small)",         overall: 48, cuba: 52, inchon: 41, gulf: 51, flags: 7 }
   ];
 
-  (function renderLeaderboard(){
+  function renderLeaderboard(rowsIn){
     var body = document.getElementById('lbBody');
     var max = 0, i;
-    for (i = 0; i < LEADERBOARD.length; i++) { if (LEADERBOARD[i].overall > max) max = LEADERBOARD[i].overall; }
-    var rows = LEADERBOARD.slice().sort(function(a,b){ return b.overall - a.overall; });
+    for (i = 0; i < rowsIn.length; i++) { if (rowsIn[i].overall > max) max = rowsIn[i].overall; }
+    if (max <= 0) max = 1;
+    var rows = rowsIn.slice().sort(function(a,b){ return b.overall - a.overall; });
     var html = '';
     for (i = 0; i < rows.length; i++) {
       var r = rows[i];
@@ -1000,6 +1006,62 @@ Respond as a deliberative memorandum.</div>
         + '</tr>';
     }
     body.innerHTML = html;
+  }
+
+  // Map a generated scores.json leaderboard row to the table's flat shape.
+  function rowsFromScores(data){
+    return data.leaderboard
+      .filter(function(r){ return r.overall != null; })
+      .map(function(r){
+        var pc = r.perCase || {};
+        return { model: r.model, overall: r.overall,
+                 cuba: pc.cuba, inchon: pc.inchon, gulf: pc.gulf, flags: r.flags };
+      });
+  }
+
+  // Flip the page's disclosure labels to "MEASURED" once real numbers load.
+  function markMeasured(data){
+    var flag = document.querySelector('#leaderboard .placeholder-flag');
+    if (flag) {
+      flag.textContent = 'MEASURED';
+      flag.style.background = 'var(--stamp)';
+    }
+    var note = document.getElementById('lbDisclaimer');
+    if (note) {
+      var when = '';
+      try { when = new Date(data.generatedAt).toISOString().slice(0,10); } catch (e) {}
+      var trials = (data.provenance && data.provenance.trials) || '?';
+      var judge = (data.provenance && data.provenance.judge) || 'judge model';
+      note.innerHTML = 'Live evaluation' + (when ? ' (' + when + ')' : '')
+        + ': ' + trials + ' trial(s) per item, graded by <strong>' + judge + '</strong>. '
+        + 'Gold keys have passed expert historical review.';
+    }
+    var concept = document.getElementById('conceptNotice');
+    if (concept) {
+      concept.innerHTML = '<b>STATUS — LIVE.</b> &nbsp;The leaderboard below shows '
+        + '<strong>measured</strong> scores from a real evaluation run whose gold keys '
+        + 'have passed expert historical review. See the '
+        + '<a href="#" onclick="openAbout();return false;">About this demo</a> panel for the method.';
+    }
+  }
+
+  // Try to load real scores; fall back to the labelled placeholders on any
+  // failure (file:// CORS, network error, missing file, malformed JSON), or
+  // when the file is present but not yet a measured run.
+  (function loadLeaderboard(){
+    renderLeaderboard(LEADERBOARD); // placeholders first — always show something
+    if (typeof fetch !== 'function') return;
+    fetch('./scores.json', { cache: 'no-store' })
+      .then(function(resp){ if (!resp.ok) throw new Error('no scores.json'); return resp.json(); })
+      .then(function(data){
+        if (!data || data.schema !== 'sjl-scores/1') throw new Error('unrecognized scores file');
+        if (data.measured !== true) throw new Error('scores present but not measured');
+        var rows = rowsFromScores(data);
+        if (!rows.length) throw new Error('scores present but empty');
+        renderLeaderboard(rows);
+        markMeasured(data);
+      })
+      .catch(function(){ /* keep placeholders; demo must still render */ });
   })();
 
   // ---- Case file accordion ----

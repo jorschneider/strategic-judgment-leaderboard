@@ -1,0 +1,66 @@
+{
+  "schema": "sjl-scores/1",
+  "generatedAt": "2026-06-03T23:35:29.551Z",
+  "measured": false,
+  "provenance": {
+    "mode": "dry-run",
+    "runMode": "dry-run",
+    "judge": "deterministic-heuristic",
+    "trials": 2,
+    "expertReviewed": false,
+    "requiresApiKey": "NOT satisfied (dry-run)",
+    "requiresExpertGoldKeyReview": "NOT satisfied"
+  },
+  "cases": [
+    {
+      "id": "cuba",
+      "shortLabel": "Cuba '62",
+      "title": "The ExComm Decision — Cuban Missile Crisis"
+    },
+    {
+      "id": "inchon",
+      "shortLabel": "Inchon '50",
+      "title": "Operation Chromite — The Inchon Landing"
+    },
+    {
+      "id": "gulf",
+      "shortLabel": "Gulf '91",
+      "title": "Stop at 100 Hours — Ending the Gulf War"
+    }
+  ],
+  "leaderboard": [
+    {
+      "modelId": "claude-opus-4-8",
+      "model": "Claude Opus 4.8",
+      "overall": 93,
+      "perCase": {
+        "cuba": 85,
+        "inchon": 93,
+        "gulf": 100
+      },
+      "flags": 3
+    },
+    {
+      "modelId": "claude-sonnet-4-6",
+      "model": "Claude Sonnet 4.6",
+      "overall": 95,
+      "perCase": {
+        "cuba": 85,
+        "inchon": 100,
+        "gulf": 100
+      },
+      "flags": 2
+    },
+    {
+      "modelId": "claude-haiku-4-5-20251001",
+      "model": "Claude Haiku 4.5",
+      "overall": 93,
+      "perCase": {
+        "cuba": 85,
+        "inchon": 93,
+        "gulf": 100
+      },
+      "flags": 3
+    }
+  ]
+}
